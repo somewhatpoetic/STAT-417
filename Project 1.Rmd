@@ -1,0 +1,214 @@
+---
+title: "STAT 417 Project 1"
+output: 
+  html_document:
+    theme: flatly
+author: "Nazimuddin Shaikh"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+<style>
+  body {
+    text-align: justify
+    }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Two Mechanics {.tabset .tabset-pills}
+
+Two mechanics are changing oil filters for the arriving customers. The service time has an Exponential distribution with mean 12 minutes for the first mechanic, and mean 3 minutes for the second mechanic. When you arrive to have your oil filter changed, your probability of being served by the faster mechanic is 0.8.
+ 
+1. Use simulation to generate 10000 service times and estimate the mean service time for yourself.
+ 
+2. Summarize your data with R code hist(x, probability = TRUE) and mean(x), where x is an array representing your simulated data. Add to the histogram two vertical lines indicating the simulated mean and the theoretical mean. A histogram can be made based on frequencies. Here is a video about histograms: https://www.youtube.com/watch?v=uHRqkGXX55I. A density histogram can also be made. To get a density histogram, the height of each bar is divided by the total number of values, and then by the length of the bar. Such a histogram has a vertical scale comparable with the probability density function of the distribution from which data are randomly drawn.
+ 
+3. Add the curve of the probability density function (which is a mixture of two exponential pdfs) of the service time to the density histogram you got in question 2. For a mixture of two exponential distributions, refer to formula 15 of the paper http://www.columbia.edu/~ww2040/OnApproximationsIII84.pdf.
+
+---
+
+### Generating Values
+
+To generate the service times for each mechanic, we create a function `generateTimes()` that can help us. It arguments include the mean service times of each mechanic and the number of iterations to generate. (_The code for this function is available in the Code Section of this document._)
+
+```{r, echo=FALSE}
+
+generateTimes <- function(lambda1, lambda2, p1, p2, n) {
+  
+  times <- c()
+  mechanic <- c()
+  
+  # for loop used to generate n iterations
+  for(i in 1:n) {
+    
+    # uniform random number generator
+    uniformNum <- runif(1)
+    
+    # depending on uniformNum, we generate random exponential value based on mean
+    times[i] <- ifelse(uniformNum <= p1, rexp(1, lambda1), rexp(1, lambda2))
+    mechanic[i] <- ifelse(uniformNum <= p1, 1, 2)
+  }
+  
+  data <- data.frame(mechanic, times)
+  return(data)
+}
+
+```
+
+Now we generate our values using the function:
+
+```{r, class.source ='fold-show'}
+
+# variables
+n <- 10000
+lambda1 <- 1/3
+lambda2 <- 1/12
+p1 <- 0.8
+p2 <- 1 - p1
+
+# empty vector to store values
+data <- generateTimes(lambda1, lambda2, p1, p2, n)
+
+```
+
+Here are the first 50 values:
+
+```{r, class.source ='fold-show'} 
+
+data$times[1:50]
+
+```
+
+### Visualising Distribution {.tabset .tabset-pills}
+
+We use the `ggplot2` package for all our visualizations.
+```{r, echo=FALSE}
+library(ggplot2)
+```
+
+This section is further divided into visualizations based on frequencies and density of our data.
+
+---
+
+#### Frequencies
+
+```{r}
+# by frequencies
+ggplot(data, aes(x=times)) +
+  geom_histogram(binwidth=3) +
+  labs(title="Frequency Histogram of Service Times",
+       x="Times",
+       y="Frequencey")
+
+```
+
+#### Density
+
+We add a density curve and the <span style="color: orange;">theoretical</span> and <span style="color: red;">actual</span> mean lines to our previously generated frequency plot. (_Notice the difference on the y-axes compared to the previous plot._)
+
+The theoretical mean is calculated using the following formula, since our distribution is a combination of two separate distributions: $$\mu = 0.8(\frac{1}{\lambda_1})+0.2(\frac{1}{\lambda_2})$$
+
+```{r}
+# theoretical mean
+tmean <- p1*(1/lambda1) + p2*(1/lambda2)
+
+# actual mean
+amean <- mean(data$times)
+
+# by density
+ggplot(data, aes(x=times)) +
+  geom_histogram(aes(y= ..density..), binwidth=3, fill="grey") +
+  geom_density(col="blue") +
+  labs(title="Density Histogram of Service Times",
+       x="Times",
+       y="Density",
+       color="Legend") +
+  geom_vline(aes(xintercept = amean), col="red") +
+  geom_vline(aes(xintercept = tmean), col="orange")
+  
+```
+
+
+
+## Summary & Discussion
+
+We use the `runif()` function to generate a random uniform number which we then use to simulate our service times for each mechanic. We record those values and generate our data set.
+
+We then visualize our values to see the underlying distribution, which comes out to be similar to an exponential distribution, as we expected.
+
+We visualize using both frequencies and density, and calculate the theoretical and actual mean to test if our theory holds in practice. On our visualization, we can only see the orange line for the theoretical mean as it overshadows the actual mean, implying that both are very close to each other. We can also check using R: 
+```{r} 
+amean # actual mean
+tmean # theoretical mean
+```
+
+We can conclude that our simulation was successful in modelling the service times for any customer.
+
+## Code
+
+This section provides all the code used for this problem.
+
+```{r, eval=FALSE}
+
+library(ggplot2)
+
+# function for generating values
+generateTimes <- function(mean1, mean2, p1, p2, n) {
+  
+  times <- c()
+  mechanic <- c()
+  
+  # for loop used to generate n iterations
+  for(i in 1:n) {
+    
+    # uniform random number generator
+    uniformNum <- runif(1)
+    
+    # depending on uniformNum, we generate random exponential value based on mean
+    times[i] <- ifelse(uniformNum <= p1, rexp(1, mean1), rexp(1, mean2))
+    mechanic[i] <- ifelse(uniformNum <= p1, 1, 2)
+  }
+  
+  data <- data.frame(mechanic, times)
+  return(data)
+}
+
+# variables
+n <- 10000
+lambda1 <- 1/3
+lambda2 <- 1/12
+p1 <- 0.8
+p2 <- 1 - p1
+
+# creating data set
+data <- generateTimes(lambda1, lambda2, p1, p2, n)
+
+data$times[1:50]
+
+# plot by frequencies
+ggplot(data, aes(x=times)) +
+  geom_histogram(binwidth=3) +
+  labs(title="Frequency Histogram of Service Times",
+       x="Times",
+       y="Frequencey")
+
+# theoretical mean
+tmean <- p1*(1/lambda1) + p2*(1/lambda2)
+
+# actual mean
+amean <- mean(data$times)
+
+# plot by frequency and density
+ggplot(data, aes(x=times)) +
+  geom_histogram(aes(y= ..density..), binwidth=3, fill="grey") +
+  geom_density(col="blue") +
+  labs(title="Density Histogram of Service Times",
+       x="Times",
+       y="Density",
+       color="Legend") +
+  geom_vline(aes(xintercept = amean), col="red") +
+  geom_vline(aes(xintercept = tmean), col="orange")
+  
+```
