@@ -1,0 +1,82 @@
+---
+title: "STAT 417 Project 2"
+output: 
+  html_document:
+    theme: flatly
+author: "Nazimuddin Shaikh"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+## Using the Rejection Method
+
+1. Use the Rejection Method to generate $n = 10000$ values for a random variable X that has the pdf of $$f(x) = \frac{x^2}{9}~~,~~0<x<3$$
+2. Create a density histogram for your generated values.
+3. Superimpose the probability density function of the target distribution to the histogram.
+4. Use the generated values to estimate the mean, standard deviation, and the probability that $X<2$.
+
+---
+
+### Rejection Method
+
+We will use the uniform distribution which has the same support as the desired distribution: $Uniform(0,1)$.
+
+We begin by creating our function and generating $n$ values:
+
+```{r}
+N = 10000     # number fo values
+i = 0         # number of candidate values before N valid values are generated using the proposal distribution
+n = 0         # iterations
+y = NULL      # empty vector
+# our function
+f <- function(x) {
+  fx = (x**2)/9
+  return(fx)
+}
+
+# generating values
+while (n <= N) {
+  i = i + 1             # iterator
+  x = runif(1, 0, 3)    # random number generated
+  u = runif(1)          # uniformly generated value
+  c = 3                 # max value of ratio
+  a = (9*f(x))*(1/c)    # alpha value used for rejection
+  
+  # accepting/rejecting values
+  if (u <= a) {
+    n = n + 1
+    y[n] = x
+  }
+}
+
+# A little sneak at our values
+y[1:50]
+```
+
+Now we create a visual for our generated distribution and superimpose a probability density function of our target distribution.
+
+```{r}
+hist(y, probability = TRUE, xlab = "x", main = "Histogram of the Generated Sample")
+curve(f, add = TRUE, lty = "dashed", col = "red")
+```
+
+```{r}
+cat("Our rejection rate is",1-(N/i),".")
+```
+
+### Using Our Distribution
+
+```{r}
+m = mean(y)
+stddev = sd(y)
+
+cat("Our distribution has the mean", m, "and the standard deviation", stddev)
+```
+
+The probability that $X<2$ is:
+```{r}
+pexp(2, 1/m)
+```
+
+### Summary
+
+Our function was expected to have an underlying exponential distribution since it is a power function. We used the rejection method to generate our own distribution for that specific function (our target distribution). 
