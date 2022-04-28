@@ -1,0 +1,71 @@
+---
+title: "STAT 417 Project 3"
+output: 
+  html_document:
+    theme: flatly
+author: "Nazimuddin Shaikh"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+### Markov Chains
+
+A computer is shared by 2 users who send tasks to a computer remotely and work independently. At any minute, any connected user may disconnect with probability 0.5, and any disconnected user may connect with a new task with probability 0.2. Let $X(t)$ be the number of concurrent users at time $t$ (in minutes). This is a Markov chain with 3 states: 0, 1, and 2. The probability transition matrix can be calculated and it is
+
+$$\begin{bmatrix} 0.64 & 0.32 & 0.04 \\ 0.40 & 0.50 & 0.10 \\ 0.25 & 0.50 & 0.25 \\ \end{bmatrix}$$
+        
+Generate 10000 transitions of the Markov chain. What percent of times do you find your generated Markov chain in each of its 3 states?
+
+---
+
+### Solution
+
+Creating the matrix:
+
+```{r}
+P = matrix(c(.64, .4, .25, .32, .5, .5, .4, .1, .25), nrow=3)
+```
+
+We also load the library `expm` for matrix exponentiation using the `%^%` operator provided by the package.
+
+```{r, include=FALSE}
+library(expm)
+```
+
+Using the matrix to generate 10000 transitions. For the sake of simplicity, only the first 5 generations.
+
+```{r}
+P%^%1
+P%^%2
+P%^%3
+P%^%4
+P%^%5
+```
+
+If we were to generate a 10000 transitions, our matrix would approach infinity, like so:
+
+```{r}
+P%^%10000
+```
+
+What we are trying to find to answer the problem of this question, is really the _Steady State Distribution_. We can find it since we know that the sum of the distribution quantities for each state is equal to 1, that is: $$\pi_1 + \pi_2 + \pi_3 = 1$$
+
+To do this in R, we use our matrix and make a tibble, then solve using a system of equations. 
+
+```{r}
+A = rbind(t(P - diag(3)), c(1, 1, 1))
+b = c(0, 0, 0, 1)
+cbind(A, b)
+qr.solve(A, b) # our steady state distribution
+```
+
+We can now use this to answer the question. We find that our markov chain is in state 1 40.00% of the time, in state 2 38% of the time, and in state 3 22% of the time. Otherwise summarized in the table below:
+
+```{r, include=FALSE}
+state = c(1, 2, 3)
+perc = c(40, 38, 22)
+tableF = rbind(state, perc)
+```
+
+```{r}
+tableF
+```
